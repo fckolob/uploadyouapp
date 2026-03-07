@@ -1,18 +1,88 @@
-<h2>Your Files</h2>
-<a href="{% url 'upload' %}">Upload File</a>
-<a href="{% url 'logout' %}">Logout</a>
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Upload Project</title>
+    <link rel="stylesheet" href="{% static 'storage/style.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Your Files</h2>
+            <div class="d-flex justify-content-center mb-3">
+                <a href="{% url 'upload' %}" class="btn">Upload File</a>
+                <a href="{% url 'logout' %}" class="btn" style="margin-left: 10px;">Logout</a>
+            </div>
 
-<ul>
-{% for file in files %}
-    <li>
-        {{ file.original_name }}
-        <a href="{% url 'download' file.id %}">Download</a>
-        <form method="post" action="{% url 'delete' file.id %}" style="display: inline;">
-            {% csrf_token %}
-            <button type="submit" onclick="return confirm('Are you sure you want to delete {{ file.original_name }}?')">Delete</button>
-        </form>
-    </li>
-{% empty %}
-    <li>No files uploaded.</li>
-{% endfor %}
-</ul>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+            {% for file in files %}
+                <div class="file-card" style="border: 1px solid #e1e5e9; border-radius: 10px; padding: 15px; background: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.1); display: flex; flex-direction: column; align-items: center; cursor: pointer;" onclick="showModal('{{ file.file.url }}', '{{ file.original_name }}', {% if '.jpg' in file.original_name|lower or '.jpeg' in file.original_name|lower or '.png' in file.original_name|lower or '.gif' in file.original_name|lower or '.bmp' in file.original_name|lower or '.webp' in file.original_name|lower %}true{% else %}false{% endif %})">
+                    {% if '.jpg' in file.original_name|lower or '.jpeg' in file.original_name|lower or '.png' in file.original_name|lower or '.gif' in file.original_name|lower or '.bmp' in file.original_name|lower or '.webp' in file.original_name|lower %}
+                        <img src="{{ file.file.url }}" alt="{{ file.original_name }}" style="max-width: 100px; max-height: 100px; border-radius: 5px; margin-bottom: 10px;">
+                    {% else %}
+                        <div class="file-icon" style="width: 80px; height: 80px; background: #f0f0f0; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 10px;">
+                            {% if '.pdf' in file.original_name|lower %}📄
+                            {% elif '.doc' in file.original_name|lower or '.docx' in file.original_name|lower %}📝
+                            {% elif '.txt' in file.original_name|lower %}📄
+                            {% elif '.zip' in file.original_name|lower or '.rar' in file.original_name|lower %}📦
+                            {% elif '.mp3' in file.original_name|lower or '.wav' in file.original_name|lower %}🎵
+                            {% elif '.mp4' in file.original_name|lower or '.avi' in file.original_name|lower %}🎥
+                            {% else %}📄{% endif %}
+                        </div>
+                    {% endif %}
+                    <h4 style="margin: 0 0 10px 0; text-align: center; font-size: 14px;">{{ file.original_name }}</h4>
+                    <div style="display: flex; gap: 5px;">
+                        <a href="{% url 'download' file.id %}" class="btn" style="font-size: 12px; padding: 5px 10px;" onclick="event.stopPropagation();">Download</a>
+                        <form method="post" action="{% url 'delete' file.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn" onclick="event.stopPropagation(); return confirm('Are you sure you want to delete {{ file.original_name }}?')" style="background: #dc3545; font-size: 12px; padding: 5px 10px;">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            {% empty %}
+                <div style="grid-column: 1 / -1; text-align: center; padding: 40px; font-size: 18px; color: #666;">No files uploaded.</div>
+            {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="fileModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;" onclick="closeModal()">
+        <div style="background: #fff; padding: 20px; border-radius: 10px; max-width: 90%; max-height: 90%; overflow: auto; position: relative;" onclick="event.stopPropagation()">
+            <button onclick="closeModal()" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 5px; padding: 5px 10px; cursor: pointer;">Close</button>
+            <div id="modalContent" style="text-align: center;"></div>
+        </div>
+    </div>
+
+    <script>
+        function showModal(url, name, isImage) {
+            const modal = document.getElementById('fileModal');
+            const content = document.getElementById('modalContent');
+            if (isImage) {
+                content.innerHTML = `<img src="${url}" alt="${name}" style="max-width: 100%; max-height: 80vh; border-radius: 5px;"><br><strong>${name}</strong>`;
+            } else {
+                const icon = getIcon(name);
+                content.innerHTML = `<div style="font-size: 48px; margin-bottom: 20px;">${icon}</div><strong>${name}</strong>`;
+            }
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('fileModal').style.display = 'none';
+        }
+
+        function getIcon(name) {
+            const lower = name.toLowerCase();
+            if (lower.includes('.pdf')) return '📄';
+            if (lower.includes('.doc') || lower.includes('.docx')) return '📝';
+            if (lower.includes('.txt')) return '📄';
+            if (lower.includes('.zip') || lower.includes('.rar')) return '📦';
+            if (lower.includes('.mp3') || lower.includes('.wav')) return '🎵';
+            if (lower.includes('.mp4') || lower.includes('.avi')) return '🎥';
+            return '📄';
+        }
+    </script>
+</body>
+</html>
