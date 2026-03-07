@@ -105,13 +105,13 @@ button:active, .btn:active {
 
 /* Links */
 a {
-    color: #667eea;
+    color:darkmagenta;
     text-decoration: none;
     transition: color 0.3s ease;
 }
 
 a:hover {
-    color:azure;
+    color:blue;
     text-decoration: underline;
 }
 
@@ -180,6 +180,10 @@ a:hover {
 
     h1, h2 {
         font-size: 20px;
+    }
+
+    .file-grid {
+        grid-template-columns: 1fr !important;
     }
 }
 
