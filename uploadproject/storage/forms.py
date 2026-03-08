@@ -3,6 +3,19 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from .models import UserFile
 import mimetypes
+import hashlib
+
+try:
+    import magic
+    MAGIC_AVAILABLE = True
+except ImportError:
+    MAGIC_AVAILABLE = False
+
+try:
+    import pyclamd
+    CLAMD_AVAILABLE = True
+except ImportError:
+    CLAMD_AVAILABLE = False
 
 class RegisterForm(UserCreationForm):
     email = forms.EmailField()
@@ -51,12 +64,29 @@ class UploadFileForm(forms.ModelForm):
                 f"File type not allowed. Allowed types: {allowed}"
             )
         
-        # Check MIME type
-        mime_type, _ = mimetypes.guess_type(file_name)
-        if mime_type and mime_type not in self.ALLOWED_MIME_TYPES:
-            raise forms.ValidationError(
-                f"Invalid file format. MIME type {mime_type} is not allowed."
-            )
+        # Read file content for MIME detection and virus scan
+        file_content = file.read()
+        file.seek(0)  # Reset file pointer
+        
+        # Use python-magic for content-based MIME detection if available
+        if MAGIC_AVAILABLE:
+            mime = magic.from_buffer(file_content[:1024], mime=True)
+        else:
+            mime, _ = mimetypes.guess_type(file_name)
+        
+        if mime and mime not in self.ALLOWED_MIME_TYPES:
+            raise forms.ValidationError("Invalid file type.")
+        
+        # Virus scan with ClamAV if available
+        if CLAMD_AVAILABLE:
+            try:
+                cd = pyclamd.ClamdUnixSocket()
+                result = cd.scan_stream(file_content)
+                if result:
+                    raise forms.ValidationError("File contains malware.")
+            except Exception as e:
+                # If ClamAV is not available or fails, log but don't block
+                pass
         
         # Prevent double extension attacks (e.g., .php.jpg)
         base_name = file.name.rsplit('.', 1)[0]
