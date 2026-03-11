@@ -41,10 +41,12 @@ The library python-magic is used to check the actual MIME types of the files to 
 # Useful Websites
 
 https://docs.djangoproject.com/
+
 https://docs.djangoproject.com/en/6.0/ref/files/uploads/
 
 https://developer.mozilla.org/en-US/docs/Learn_web_development/Extensions/Server-side/Django/Models
 
+https://docs.djangoproject.com/en/6.0/ref/csrf/
 
 
 
