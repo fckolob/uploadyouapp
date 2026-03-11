@@ -80,7 +80,7 @@ class UploadFileForm(forms.ModelForm):
         # Virus scan with ClamAV if available
         if CLAMD_AVAILABLE:
             try:
-                cd = pyclamd.ClamdUnixSocket()
+                cd = pyclamd.ClamdNetworkSocket(host='127.0.0.1', port=3310)
                 result = cd.scan_stream(file_content)
                 if result:
                     raise forms.ValidationError("File contains malware.")
